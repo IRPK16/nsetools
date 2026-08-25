@@ -9,31 +9,13 @@ services:
     restart: always
     environment:
       - TZ=Asia/Kolkata
-    # Bypasses local volume tracking by creating the application script 
-    # and setting up dependencies directly in the container environment.
+    # Bypasses string stripping bugs by executing a secure encoded payload block
     entrypoint: >
       sh -c "
       apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/* &&
       pip install --no-cache-dir fastapi==0.110.0 uvicorn==0.28.0 &&
       pip install --no-cache-dir git+https://github.com &&
-      echo 'from fastapi import FastAPI, HTTPException
-      from nsetools import Nse
-      app = FastAPI(title=\"NSE Tools Advanced API Service\")
-      nse = Nse()
-      @app.get(\"/health\")
-      def hc(): return {\"status\":\"operational\"}
-      @app.get(\"/stocks/all\")
-      def all_stocks():
-          try: return nse.get_stock_codes()
-          except Exception as e: raise HTTPException(status_code=500, detail=str(e))
-      @app.get(\"/stocks/quote/{ticker}\")\n
-      def stock_quote(ticker: str):
-          try: return nse.get_quote(ticker.lower(), all_data=True)
-          except Exception as e: raise HTTPException(status_code=500, detail=str(e))
-      @app.get(\"/market/movers\")
-      def market_movers():
-          try: return {\"gainers\": nse.get_top_gainers(), \"losers\": nse.get_top_losers()}
-          except Exception as e: raise HTTPException(status_code=500, detail=str(e))' > /app.py &&
+      echo 'ZnJvbSBmYXN0YXBpIGltcG9ydCBGYXN0QVBpLCBIVFRQRXhjZXB0aW9uCmZyb20gbnNldG9vbHMgaW1wb3J0IE5zZQoKYXBwID0gRmFzdEFQSTcodGl0bGU9Ik5TRSBUb29scyBBUEkiKQpuc2UgPSBOc2UoKQoKQGFwcC5nZXQoIi9oZWFsdGgiKQpkZWYgaGMoKTogcmV0dXJuIHsic3RhdHVzIjoib3BlcmF0aW9uYWwifQoKQGFwcC5nZXQoIi9zdG9ja3MvYWxsIikKZGVmIGFsbF9zdG9ja3MoKToKICAgIHRyeTogcmV0dXJuIG5zZS5nZXRfc3RvY2tfY29kZXMoKQogICAgZXhjZXB0IEV4Y2VwdGlvbiBhcyBlOiByYWlzZSBIVFRQRXhjZXB0aW9uKHN0YXR1c19jb2RlPTUwMCwgZGV0YWlsPXN0cihlKSkKCkBhcHAuZ2V0KCIvc3RvY2tzL3F1b3RlL3t0aWNrZXJ9IikKZGVmIHN0b2NrX3F1b3RlKHRpY2tlcjogc3RyKToKICAgIHRyeTogcmV0dXJuIG5zZS5nZXRfcXVvdGUodGlja2VyLmxvd2VyKCksIGFsbF9kYXRhPVRydWUpCiAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6IHJhaXNlIEhUVFBFeGNlcHRpb24oc3RhdHVzX2NvZGU9NTAwLCBkZXRhaWw9c3RyKGUpKQoKQGFwcC5nZXQoIi9tYXJrZXQvbW92ZXJzIikKZGVmIG1hcmtldF9tb3ZlcnMoKToKICAgIHRyeTogcmV0dXJuIHsiZ2FpbmVycyI6IG5zZS5nZXRfdG9wX2dhaW5lcnMoKSwgImxvc2VycyI6IG5zZS5nZXRfdG9wX2xvc2VycygpfQogICAgZXhjZXB0IEV4Y2VwdGlvbiBhcyBlOiByYWlzZSBIVFRQRXhjZXB0aW9uKHN0YXR1c19jb2RlPTUwMCwgZGV0YWlsPXN0cihlKSk=' | base64 -d > /app.py &&
       uvicorn app:app --host 0.0.0.0 --port 8000
       "
     healthcheck:
