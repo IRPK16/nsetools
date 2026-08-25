@@ -9,16 +9,31 @@ services:
     restart: always
     environment:
       - TZ=Asia/Kolkata
-    volumes:
-      - .:/workspace
-    working_dir: /workspace
-    # Dynamically configures the Linux system container, installs prerequisites,
-    # grabs the master branch code from github directly, and launches FastAPI.
+    # Bypasses local volume tracking by creating the application script 
+    # and setting up dependencies directly in the container environment.
     entrypoint: >
       sh -c "
       apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/* &&
-      pip install --no-cache-dir -r requirements.txt &&
+      pip install --no-cache-dir fastapi==0.110.0 uvicorn==0.28.0 &&
       pip install --no-cache-dir git+https://github.com &&
+      echo 'from fastapi import FastAPI, HTTPException
+      from nsetools import Nse
+      app = FastAPI(title=\"NSE Tools Advanced API Service\")
+      nse = Nse()
+      @app.get(\"/health\")
+      def hc(): return {\"status\":\"operational\"}
+      @app.get(\"/stocks/all\")
+      def all_stocks():
+          try: return nse.get_stock_codes()
+          except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+      @app.get(\"/stocks/quote/{ticker}\")\n
+      def stock_quote(ticker: str):
+          try: return nse.get_quote(ticker.lower(), all_data=True)
+          except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+      @app.get(\"/market/movers\")
+      def market_movers():
+          try: return {\"gainers\": nse.get_top_gainers(), \"losers\": nse.get_top_losers()}
+          except Exception as e: raise HTTPException(status_code=500, detail=str(e))' > /app.py &&
       uvicorn app:app --host 0.0.0.0 --port 8000
       "
     healthcheck:
