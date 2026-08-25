@@ -1,16 +1,26 @@
 version: '3.8'
 
 services:
-  nse-fastapi-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  nse-api:
+    image: python:3.11-slim
     container_name: nse_market_api
     ports:
       - "8000:8000"
     restart: always
     environment:
       - TZ=Asia/Kolkata
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    # Dynamically configures the Linux system container, installs prerequisites,
+    # grabs the master branch code from github directly, and launches FastAPI.
+    entrypoint: >
+      sh -c "
+      apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/* &&
+      pip install --no-cache-dir -r requirements.txt &&
+      pip install --no-cache-dir git+https://github.com &&
+      uvicorn app:app --host 0.0.0.0 --port 8000
+      "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
